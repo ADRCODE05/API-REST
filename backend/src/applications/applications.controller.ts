@@ -7,11 +7,12 @@ import { Role } from "../common/enums/role.enum"
 import { RolesGuard } from "../common/guards/roles.guard"
 import { ApiKeyGuard } from "../common/guards/api-key.guard"
 import { CurrentUser } from "../common/decorators/current-user.decorator"
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard"
 
 @ApiTags("Postulaciones")
 @ApiSecurity("API_KEY")
 @ApiBearerAuth("JWT")
-@UseGuards(ApiKeyGuard, RolesGuard)
+@UseGuards(ApiKeyGuard, JwtAuthGuard, RolesGuard)
 @Controller("applications")
 export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) { }

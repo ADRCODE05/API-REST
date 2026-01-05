@@ -14,6 +14,9 @@
             <div class="header-content">
                 <h1>Riwi Employability</h1>
                 <p class="subtitle">Vacancy Application Platform</p>
+                <div class="header-links">
+                    <a href="http://localhost:3001/api/docs" target="_blank" class="nav-link">📚 API Docs</a>
+                </div>
             </div>
             <div id="user-info" class="user-info" style="display: none;">
                 <span id="user-name"></span>
@@ -93,6 +96,19 @@
                 </div>
 
                 <div id="vacancies-list-gestor"></div>
+
+                <div id="all-applications-section" style="display: none; margin-top: 40px;">
+                    <div class="panel-header">
+                        <h2>All Applications</h2>
+                        <button onclick="hideAllApplications()" class="btn-secondary">Back to Vacancies</button>
+                    </div>
+                    <div id="all-applications-list"></div>
+                </div>
+
+                <div class="panel-actions" style="margin-top: 20px;">
+                    <button id="btn-view-all-apps" onclick="showAllApplications()" class="btn-secondary">View All
+                        Applications</button>
+                </div>
             </div>
 
             <!-- Coder Panel -->
@@ -110,7 +126,7 @@
     <div id="create-vacancy-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Create New Vacancy</h2>
+                <h2 id="vacancy-modal-title">Create New Vacancy</h2>
                 <button class="close-btn" onclick="closeCreateVacancyModal()">&times;</button>
             </div>
             <form id="create-vacancy-form">
@@ -157,6 +173,17 @@
                 <button type="submit" class="btn-primary">Create Vacancy</button>
                 <div id="create-vacancy-error" class="error-message"></div>
             </form>
+        </div>
+    </div>
+
+    <!-- View Applicants Modal -->
+    <div id="view-applicants-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="applicants-modal-title">Applicants</h2>
+                <button class="close-btn" onclick="closeViewApplicantsModal()">&times;</button>
+            </div>
+            <div id="applicants-list-container"></div>
         </div>
     </div>
 

@@ -13,21 +13,30 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, Response<T>> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<Response<T>> {
     return next.handle().pipe(
       map((data) => {
-        // Si ya tiene el formato correcto, lo retornamos
-        if (data && typeof data === "object" && "success" in data) {
+        // If data is already in the final response format, return it
+        if (data && typeof data === "object" && "success" in data && "data" in data) {
           return data
         }
 
-        // Si es un objeto con mensaje personalizado
+        // If data is an array, wrap it in the standard format
+        if (Array.isArray(data)) {
+          return {
+            success: true,
+            data: data,
+            message: "Operación exitosa",
+          }
+        }
+
+        // If it's an object with a message, use its structure
         if (data && typeof data === "object" && "message" in data) {
           return {
             success: true,
-            data: data.data || data,
+            data: data.data !== undefined ? data.data : data,
             message: data.message || "Operación exitosa",
           }
         }
 
-        // Formato por defecto
+        // Default wrapping
         return {
           success: true,
           data: data,

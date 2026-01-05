@@ -37,7 +37,7 @@ describe("ApplicationsService", () => {
     }
 
     mockVacanciesService = {
-      findOne: (jest.fn() as any).mockResolvedValue({ data: mockVacancy }),
+      findOne: (jest.fn() as any).mockResolvedValue(mockVacancy),
       hasAvailableSlots: (jest.fn() as any).mockResolvedValue(true),
     }
 
@@ -78,7 +78,7 @@ describe("ApplicationsService", () => {
     })
 
     it("should throw NotFoundException if vacancy does not exist", async () => {
-      mockVacanciesService.findOne.mockResolvedValueOnce({ data: null })
+      mockVacanciesService.findOne.mockResolvedValueOnce(null)
 
       const createApplicationDto = {
         vacancyId: "vacancy-999",
@@ -88,9 +88,7 @@ describe("ApplicationsService", () => {
     })
 
     it("should throw BadRequestException if vacancy is inactive", async () => {
-      mockVacanciesService.findOne.mockResolvedValueOnce({
-        data: { ...mockVacancy, isActive: false },
-      })
+      mockVacanciesService.findOne.mockResolvedValueOnce({ ...mockVacancy, isActive: false })
 
       const createApplicationDto = {
         vacancyId: "vacancy-1",
@@ -134,7 +132,7 @@ describe("ApplicationsService", () => {
     it("should return a user's applications", async () => {
       const result = await service.findByUser("user-1")
 
-      expect(result.data).toBeDefined()
+      expect(result).toBeDefined()
       expect(mockApplicationsRepository.find).toHaveBeenCalledWith({
         where: { userId: "user-1" },
         relations: ["vacancy", "vacancy.technologies"],
