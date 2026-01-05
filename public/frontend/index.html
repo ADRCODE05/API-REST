@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwi Employability - Vacancy Platform</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1>Riwi Employability</h1>
+                <p class="subtitle">Vacancy Application Platform</p>
+            </div>
+            <div id="user-info" class="user-info" style="display: none;">
+                <span id="user-name"></span>
+                <span id="user-role"></span>
+                <button onclick="logout()" class="btn-secondary">Log Out</button>
+            </div>
+        </header>
+
+        <!-- Auth Section -->
+        <div id="auth-section" class="auth-section">
+            <div class="auth-container">
+                <div class="auth-tabs">
+                    <button id="tab-login" class="auth-tab active" onclick="showLogin()">Login</button>
+                    <button id="tab-register" class="auth-tab" onclick="showRegister()">Register</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form" class="auth-form">
+                    <h2>Login</h2>
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required placeholder="you@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn-primary">Login</button>
+                    <div id="login-error" class="error-message"></div>
+                </form>
+
+                <!-- Register Form -->
+                <form id="register-form" class="auth-form" style="display: none;">
+                    <h2>Register as Coder</h2>
+                    <div class="form-group">
+                        <label for="register-name">Full Name</label>
+                        <input type="text" id="register-name" required placeholder="John Doe">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-email">Email</label>
+                        <input type="email" id="register-email" required placeholder="you@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="register-password">Password</label>
+                        <input type="password" id="register-password" required placeholder="Minimum 6 characters">
+                    </div>
+                    <button type="submit" class="btn-primary">Register</button>
+                    <div id="register-error" class="error-message"></div>
+                </form>
+
+                <div class="demo-credentials">
+                    <h3>Demo Credentials:</h3>
+                    <p><strong>Gestor:</strong> gestor@riwi.io / password123</p>
+                    <p><strong>Coder:</strong> carlos@example.com / password123</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content" style="display: none;">
+            <!-- Gestor Panel -->
+            <div id="gestor-panel" style="display: none;">
+                <div class="panel-header">
+                    <h2>Gestor Panel</h2>
+                    <button onclick="showCreateVacancyModal()" class="btn-primary">+ Create Vacancy</button>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3 id="total-vacancies">0</h3>
+                        <p>Active Vacancies</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="total-applications">0</h3>
+                        <p>Applications</p>
+                    </div>
+                </div>
+
+                <div id="vacancies-list-gestor"></div>
+            </div>
+
+            <!-- Coder Panel -->
+            <div id="coder-panel" style="display: none;">
+                <h2>Available Vacancies</h2>
+                <div id="vacancies-list"></div>
+
+                <h2 class="section-title">My Applications</h2>
+                <div id="my-applications"></div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Vacancy Modal -->
+    <div id="create-vacancy-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create New Vacancy</h2>
+                <button class="close-btn" onclick="closeCreateVacancyModal()">&times;</button>
+            </div>
+            <form id="create-vacancy-form">
+                <div class="form-group">
+                    <label for="vacancy-title">Title *</label>
+                    <input type="text" id="vacancy-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="vacancy-description">Description *</label>
+                    <textarea id="vacancy-description" required rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="vacancy-technologies">Technologies (comma separated) *</label>
+                    <input type="text" id="vacancy-technologies" required placeholder="JavaScript, React, Node.js">
+                </div>
+                <div class="form-group">
+                    <label for="vacancy-seniority">Seniority *</label>
+                    <input type="text" id="vacancy-seniority" required placeholder="Junior, Semi-Senior, Senior">
+                </div>
+                <div class="form-group">
+                    <label for="vacancy-location">Location *</label>
+                    <input type="text" id="vacancy-location" required placeholder="Medellín">
+                </div>
+                <div class="form-group">
+                    <label for="vacancy-modality">Modality *</label>
+                    <select id="vacancy-modality" required>
+                        <option value="remoto">Remote</option>
+                        <option value="híbrido">Hybrid</option>
+                        <option value="presencial">On-site</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="vacancy-salary">Salary Range *</label>
+                    <input type="text" id="vacancy-salary" required placeholder="$3.000.000 - $5.000.000">
+                </div>
+                <div class="form-group">
+                    <label for="vacancy-company">Company *</label>
+                    <input type="text" id="vacancy-company" required>
+                </div>
+                <div class="form-group">
+                    <label for="vacancy-max">Max Slots *</label>
+                    <input type="number" id="vacancy-max" required min="1" value="10">
+                </div>
+                <button type="submit" class="btn-primary">Create Vacancy</button>
+                <div id="create-vacancy-error" class="error-message"></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
