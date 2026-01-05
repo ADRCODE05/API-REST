@@ -1,10 +1,10 @@
+import { describe, it, beforeEach, expect, jest } from "@jest/globals"
 import { Test, type TestingModule } from "@nestjs/testing"
 import { getRepositoryToken } from "@nestjs/typeorm"
 import { ApplicationsService } from "./applications.service"
 import { Application } from "./entities/application.entity"
 import { VacanciesService } from "../vacancies/vacancies.service"
 import { BadRequestException, NotFoundException, ConflictException } from "@nestjs/common"
-import { jest } from "@jest/globals"
 
 describe("ApplicationsService", () => {
   let service: ApplicationsService
@@ -13,7 +13,7 @@ describe("ApplicationsService", () => {
 
   const mockVacancy = {
     id: "vacancy-1",
-    title: "Desarrollador Full Stack",
+    title: "Full Stack Developer",
     isActive: true,
     maxApplicants: 10,
     applications: [],
@@ -28,17 +28,17 @@ describe("ApplicationsService", () => {
 
   beforeEach(async () => {
     mockApplicationsRepository = {
-      create: jest.fn().mockReturnValue(mockApplication),
-      save: jest.fn().mockResolvedValue(mockApplication),
-      find: jest.fn().mockResolvedValue([mockApplication]),
-      findOne: jest.fn().mockResolvedValue(null),
-      count: jest.fn().mockResolvedValue(0),
-      remove: jest.fn().mockResolvedValue(mockApplication),
+      create: (jest.fn() as any).mockReturnValue(mockApplication),
+      save: (jest.fn() as any).mockResolvedValue(mockApplication),
+      find: (jest.fn() as any).mockResolvedValue([mockApplication]),
+      findOne: (jest.fn() as any).mockResolvedValue(null),
+      count: (jest.fn() as any).mockResolvedValue(0),
+      remove: (jest.fn() as any).mockResolvedValue(mockApplication),
     }
 
     mockVacanciesService = {
-      findOne: jest.fn().mockResolvedValue({ data: mockVacancy }),
-      hasAvailableSlots: jest.fn().mockResolvedValue(true),
+      findOne: (jest.fn() as any).mockResolvedValue({ data: mockVacancy }),
+      hasAvailableSlots: (jest.fn() as any).mockResolvedValue(true),
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -58,26 +58,26 @@ describe("ApplicationsService", () => {
     service = module.get<ApplicationsService>(ApplicationsService)
   })
 
-  it("debe estar definido", () => {
+  it("should be defined", () => {
     expect(service).toBeDefined()
   })
 
   describe("create", () => {
-    it("debe crear una postulación exitosamente", async () => {
+    it("should create an application successfully", async () => {
       const createApplicationDto = {
         vacancyId: "vacancy-1",
       }
 
-      mockApplicationsRepository.findOne.mockResolvedValueOnce({ ...mockApplication, user: {}, vacancy: {} })
+      mockApplicationsRepository.findOne.mockResolvedValueOnce(null)
 
       const result = await service.create("user-1", createApplicationDto)
 
-      expect(result.message).toBe("Postulación realizada exitosamente")
+      expect(result.message).toBe("Application submitted successfully")
       expect(result.data).toBeDefined()
       expect(mockApplicationsRepository.save).toHaveBeenCalled()
     })
 
-    it("debe lanzar NotFoundException si la vacante no existe", async () => {
+    it("should throw NotFoundException if vacancy does not exist", async () => {
       mockVacanciesService.findOne.mockResolvedValueOnce({ data: null })
 
       const createApplicationDto = {
@@ -87,7 +87,7 @@ describe("ApplicationsService", () => {
       await expect(service.create("user-1", createApplicationDto)).rejects.toThrow(NotFoundException)
     })
 
-    it("debe lanzar BadRequestException si la vacante está inactiva", async () => {
+    it("should throw BadRequestException if vacancy is inactive", async () => {
       mockVacanciesService.findOne.mockResolvedValueOnce({
         data: { ...mockVacancy, isActive: false },
       })
@@ -99,7 +99,7 @@ describe("ApplicationsService", () => {
       await expect(service.create("user-1", createApplicationDto)).rejects.toThrow(BadRequestException)
     })
 
-    it("debe lanzar ConflictException si ya existe una postulación", async () => {
+    it("should throw ConflictException if application already exists", async () => {
       mockApplicationsRepository.findOne.mockResolvedValueOnce(mockApplication)
 
       const createApplicationDto = {
@@ -109,7 +109,7 @@ describe("ApplicationsService", () => {
       await expect(service.create("user-1", createApplicationDto)).rejects.toThrow(ConflictException)
     })
 
-    it("debe lanzar BadRequestException si no hay cupos disponibles", async () => {
+    it("should throw BadRequestException if no slots are available", async () => {
       mockVacanciesService.hasAvailableSlots.mockResolvedValueOnce(false)
 
       const createApplicationDto = {
@@ -119,7 +119,7 @@ describe("ApplicationsService", () => {
       await expect(service.create("user-1", createApplicationDto)).rejects.toThrow(BadRequestException)
     })
 
-    it("debe lanzar BadRequestException si el usuario tiene 3 postulaciones activas", async () => {
+    it("should throw BadRequestException if user has 3 active applications", async () => {
       mockApplicationsRepository.count.mockResolvedValueOnce(3)
 
       const createApplicationDto = {
@@ -131,7 +131,7 @@ describe("ApplicationsService", () => {
   })
 
   describe("findByUser", () => {
-    it("debe retornar las postulaciones de un usuario", async () => {
+    it("should return a user's applications", async () => {
       const result = await service.findByUser("user-1")
 
       expect(result.data).toBeDefined()
@@ -144,22 +144,22 @@ describe("ApplicationsService", () => {
   })
 
   describe("remove", () => {
-    it("debe eliminar una postulación exitosamente", async () => {
+    it("should delete an application successfully", async () => {
       mockApplicationsRepository.findOne.mockResolvedValueOnce(mockApplication)
 
       const result = await service.remove("app-1", "user-1")
 
-      expect(result.message).toBe("Postulación eliminada exitosamente")
+      expect(result.message).toBe("Application deleted successfully")
       expect(mockApplicationsRepository.remove).toHaveBeenCalled()
     })
 
-    it("debe lanzar NotFoundException si la postulación no existe", async () => {
+    it("should throw NotFoundException if application does not exist", async () => {
       mockApplicationsRepository.findOne.mockResolvedValueOnce(null)
 
       await expect(service.remove("app-999", "user-1")).rejects.toThrow(NotFoundException)
     })
 
-    it("debe lanzar BadRequestException si el usuario no es el dueño", async () => {
+    it("should throw BadRequestException if user is not the owner", async () => {
       mockApplicationsRepository.findOne.mockResolvedValueOnce(mockApplication)
 
       await expect(service.remove("app-1", "user-2")).rejects.toThrow(BadRequestException)

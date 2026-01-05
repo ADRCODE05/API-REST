@@ -1,37 +1,42 @@
-import { Controller, Get, Post, Patch, Param, UseGuards, Query } from "@nestjs/common"
-import { ApiTags, ApiOperation, ApiResponse, ApiSecurity, ApiBearerAuth } from "@nestjs/swagger"
-import type { VacanciesService } from "./vacancies.service"
-import type { CreateVacancyDto } from "./dto/create-vacancy.dto"
-import type { UpdateVacancyDto } from "./dto/update-vacancy.dto"
+import { Controller, Get, Post, Patch, Param, UseGuards, Query, Body } from "@nestjs/common"
+import { ApiTags, ApiOperation, ApiResponse, ApiSecurity, ApiBearerAuth, ApiQuery } from "@nestjs/swagger"
+import { VacanciesService } from "./vacancies.service"
+import { CreateVacancyDto } from "./dto/create-vacancy.dto"
+import { UpdateVacancyDto } from "./dto/update-vacancy.dto"
 import { Roles } from "../common/decorators/roles.decorator"
 import { Role } from "../common/enums/role.enum"
 import { RolesGuard } from "../common/guards/roles.guard"
 import { ApiKeyGuard } from "../common/guards/api-key.guard"
+import { JwtAuthGuard } from "../common/guards/jwt-auth.guard"
+import { Public } from "../common/decorators/public.decorator"
 
 @ApiTags("Vacantes")
 @ApiSecurity("API_KEY")
 @ApiBearerAuth("JWT")
-@UseGuards(ApiKeyGuard, RolesGuard)
+@UseGuards(ApiKeyGuard, JwtAuthGuard, RolesGuard)
 @Controller("vacancies")
 export class VacanciesController {
-  constructor(private readonly vacanciesService: VacanciesService) {}
+  constructor(private readonly vacanciesService: VacanciesService) { }
 
   @Post()
   @Roles(Role.ADMINISTRADOR, Role.GESTOR)
   @ApiOperation({ summary: "Crear una nueva vacante (Solo Gestor y Administrador)" })
   @ApiResponse({ status: 201, description: "Vacante creada exitosamente" })
   @ApiResponse({ status: 403, description: "No tienes permisos para crear vacantes" })
-  create(createVacancyDto: CreateVacancyDto) {
+  create(@Body() createVacancyDto: CreateVacancyDto) {
     return this.vacanciesService.create(createVacancyDto)
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: "Listar todas las vacantes activas" })
+  @ApiQuery({ name: "includeInactive", required: false, type: Boolean, description: "Incluir vacantes inactivas" })
   @ApiResponse({ status: 200, description: "Lista de vacantes obtenida exitosamente" })
   findAll(@Query("includeInactive") includeInactive?: string) {
     return this.vacanciesService.findAll(includeInactive === "true")
   }
 
+  @Public()
   @Get(":id")
   @ApiOperation({ summary: "Obtener detalle de una vacante" })
   @ApiResponse({ status: 200, description: "Vacante obtenida exitosamente" })
@@ -46,7 +51,7 @@ export class VacanciesController {
   @ApiResponse({ status: 200, description: "Vacante actualizada exitosamente" })
   @ApiResponse({ status: 403, description: "No tienes permisos" })
   @ApiResponse({ status: 404, description: "Vacante no encontrada" })
-  update(@Param("id") id: string, updateVacancyDto: UpdateVacancyDto) {
+  update(@Param("id") id: string, @Body() updateVacancyDto: UpdateVacancyDto) {
     return this.vacanciesService.update(id, updateVacancyDto)
   }
 

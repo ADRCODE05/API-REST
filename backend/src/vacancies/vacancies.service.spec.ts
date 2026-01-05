@@ -1,10 +1,10 @@
+import { describe, it, beforeEach, expect, jest } from "@jest/globals"
 import { Test, type TestingModule } from "@nestjs/testing"
 import { getRepositoryToken } from "@nestjs/typeorm"
 import { VacanciesService } from "./vacancies.service"
 import { Vacancy, Modality } from "./entities/vacancy.entity"
 import { TechnologiesService } from "../technologies/technologies.service"
 import { NotFoundException, BadRequestException } from "@nestjs/common"
-import { jest } from "@jest/globals"
 
 describe("VacanciesService", () => {
   let service: VacanciesService
@@ -13,14 +13,14 @@ describe("VacanciesService", () => {
 
   const mockVacancy = {
     id: "1",
-    title: "Desarrollador Full Stack",
-    description: "Buscamos desarrollador",
+    title: "Full Stack Developer",
+    description: "Looking for a specialized developer",
     technologies: [{ id: "1", name: "javascript" }],
     seniority: "Semi-Senior",
-    softSkills: "Trabajo en equipo",
+    softSkills: "Teamwork",
     location: "Medellín",
-    modality: Modality.REMOTO,
-    salaryRange: "$3.000.000 - $5.000.000",
+    modality: Modality.REMOTE,
+    salaryRange: "$3,000,000 - $5,000,000",
     company: "Riwi",
     maxApplicants: 10,
     isActive: true,
@@ -30,14 +30,14 @@ describe("VacanciesService", () => {
 
   beforeEach(async () => {
     mockVacanciesRepository = {
-      create: jest.fn().mockReturnValue(mockVacancy),
-      save: jest.fn().mockResolvedValue(mockVacancy),
-      find: jest.fn().mockResolvedValue([mockVacancy]),
-      findOne: jest.fn().mockResolvedValue(mockVacancy),
+      create: (jest.fn() as any).mockReturnValue(mockVacancy),
+      save: (jest.fn() as any).mockResolvedValue(mockVacancy),
+      find: (jest.fn() as any).mockResolvedValue([mockVacancy]),
+      findOne: (jest.fn() as any).mockResolvedValue(mockVacancy),
     }
 
     mockTechnologiesService = {
-      findOrCreate: jest.fn().mockResolvedValue([{ id: "1", name: "javascript" }]),
+      findOrCreate: (jest.fn() as any).mockResolvedValue([{ id: "1", name: "javascript" }]),
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -57,42 +57,42 @@ describe("VacanciesService", () => {
     service = module.get<VacanciesService>(VacanciesService)
   })
 
-  it("debe estar definido", () => {
+  it("should be defined", () => {
     expect(service).toBeDefined()
   })
 
   describe("create", () => {
-    it("debe crear una vacante exitosamente", async () => {
+    it("should create a vacancy successfully", async () => {
       const createVacancyDto = {
-        title: "Desarrollador Full Stack",
-        description: "Buscamos desarrollador",
+        title: "Full Stack Developer",
+        description: "Looking for a specialized developer",
         technologies: ["JavaScript", "React"],
         seniority: "Semi-Senior",
-        softSkills: "Trabajo en equipo",
+        softSkills: "Teamwork",
         location: "Medellín",
-        modality: Modality.REMOTO,
-        salaryRange: "$3.000.000 - $5.000.000",
+        modality: Modality.REMOTE,
+        salaryRange: "$3,000,000 - $5,000,000",
         company: "Riwi",
         maxApplicants: 10,
       }
 
       const result = await service.create(createVacancyDto)
 
-      expect(result.message).toBe("Vacante creada exitosamente")
+      expect(result.message).toBe("Vacancy created successfully")
       expect(result.data).toBeDefined()
       expect(mockTechnologiesService.findOrCreate).toHaveBeenCalledWith(createVacancyDto.technologies)
       expect(mockVacanciesRepository.save).toHaveBeenCalled()
     })
 
-    it("debe lanzar BadRequestException si no hay cupo máximo", async () => {
+    it("should throw BadRequestException if max applicants is invalid", async () => {
       const createVacancyDto: any = {
-        title: "Desarrollador Full Stack",
-        description: "Buscamos desarrollador",
+        title: "Full Stack Developer",
+        description: "Looking for a specialized developer",
         technologies: ["JavaScript"],
         seniority: "Semi-Senior",
         location: "Medellín",
-        modality: Modality.REMOTO,
-        salaryRange: "$3.000.000",
+        modality: Modality.REMOTE,
+        salaryRange: "$3,000,000",
         company: "Riwi",
         maxApplicants: 0,
       }
@@ -102,7 +102,7 @@ describe("VacanciesService", () => {
   })
 
   describe("findAll", () => {
-    it("debe retornar todas las vacantes activas", async () => {
+    it("should return all active vacancies", async () => {
       const result = await service.findAll(false)
 
       expect(result.data).toBeDefined()
@@ -114,7 +114,7 @@ describe("VacanciesService", () => {
       })
     })
 
-    it("debe incluir información de cupos disponibles", async () => {
+    it("should include available slots information", async () => {
       const result = await service.findAll(false)
 
       expect(result.data[0].currentApplicants).toBeDefined()
@@ -124,7 +124,7 @@ describe("VacanciesService", () => {
   })
 
   describe("findOne", () => {
-    it("debe retornar una vacante por ID", async () => {
+    it("should return a vacancy by ID", async () => {
       const result = await service.findOne("1")
 
       expect(result.data).toBeDefined()
@@ -135,7 +135,7 @@ describe("VacanciesService", () => {
       })
     })
 
-    it("debe lanzar NotFoundException si no existe la vacante", async () => {
+    it("should throw NotFoundException if vacancy does not exist", async () => {
       mockVacanciesRepository.findOne.mockResolvedValueOnce(null)
 
       await expect(service.findOne("999")).rejects.toThrow(NotFoundException)
@@ -143,13 +143,13 @@ describe("VacanciesService", () => {
   })
 
   describe("hasAvailableSlots", () => {
-    it("debe retornar true si hay cupos disponibles", async () => {
+    it("should return true if slots are available", async () => {
       const result = await service.hasAvailableSlots("1")
 
       expect(result).toBe(true)
     })
 
-    it("debe retornar false si no hay cupos disponibles", async () => {
+    it("should return false if no slots are available", async () => {
       const fullVacancy = {
         ...mockVacancy,
         maxApplicants: 2,

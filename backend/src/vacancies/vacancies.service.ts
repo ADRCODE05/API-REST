@@ -2,9 +2,9 @@ import { Injectable, NotFoundException, BadRequestException } from "@nestjs/comm
 import { InjectRepository } from "@nestjs/typeorm"
 import type { Repository } from "typeorm"
 import { Vacancy } from "./entities/vacancy.entity"
-import type { TechnologiesService } from "../technologies/technologies.service"
-import type { CreateVacancyDto } from "./dto/create-vacancy.dto"
-import type { UpdateVacancyDto } from "./dto/update-vacancy.dto"
+import { TechnologiesService } from "../technologies/technologies.service"
+import { CreateVacancyDto } from "./dto/create-vacancy.dto"
+import { UpdateVacancyDto } from "./dto/update-vacancy.dto"
 
 @Injectable()
 export class VacanciesService {
@@ -12,41 +12,46 @@ export class VacanciesService {
     @InjectRepository(Vacancy)
     private vacanciesRepository: Repository<Vacancy>,
     private technologiesService: TechnologiesService,
-  ) {}
+  ) { }
 
   async create(createVacancyDto: CreateVacancyDto) {
-    // Validar que tenga cupo máximo
+    // I validate that the vacancy has a valid maximum number of applicants.
+    // This is important to ensure we don't have infinite slots.
     if (!createVacancyDto.maxApplicants || createVacancyDto.maxApplicants < 1) {
-      throw new BadRequestException("Debe especificar un cupo máximo válido")
+      throw new BadRequestException("You must specify a valid maximum number of applicants")
     }
 
-    // Buscar o crear las tecnologías
+    // I use the technologies service to handle the many-to-many relationship.
+    // If a technology doesn't exist, I create it on the fly.
     const technologies = await this.technologiesService.findOrCreate(createVacancyDto.technologies)
 
-    // Crear la vacante
+    // I create the vacancy object using the repository's factory method.
     const vacancy = this.vacanciesRepository.create({
       ...createVacancyDto,
       technologies,
     })
 
+    // I save it to the database.
     const savedVacancy = await this.vacanciesRepository.save(vacancy)
 
     return {
-      message: "Vacante creada exitosamente",
+      message: "Vacancy created successfully",
       data: savedVacancy,
     }
   }
 
   async findAll(includeInactive = false) {
+    // I determine if I should show only active vacancies or all of them.
     const where = includeInactive ? {} : { isActive: true }
 
+    // I fetch the vacancies with their related technologies and applications.
     const vacancies = await this.vacanciesRepository.find({
       where,
       relations: ["technologies", "applications"],
       order: { createdAt: "DESC" },
     })
 
-    // Agregar información de cupos disponibles
+    // I manually calculate availability info to show it clearly in the frontend.
     const vacanciesWithAvailability = vacancies.map((vacancy) => ({
       ...vacancy,
       currentApplicants: vacancy.applications?.length || 0,
@@ -60,15 +65,17 @@ export class VacanciesService {
   }
 
   async findOne(id: string) {
+    // I look for a specific vacancy and include all necessary relations for the detail view.
     const vacancy = await this.vacanciesRepository.findOne({
       where: { id },
       relations: ["technologies", "applications", "applications.user"],
     })
 
     if (!vacancy) {
-      throw new NotFoundException("Vacante no encontrada")
+      throw new NotFoundException("Vacancy not found")
     }
 
+    // I return the calculated availability metrics here as well.
     return {
       data: {
         ...vacancy,
@@ -83,22 +90,22 @@ export class VacanciesService {
     const vacancy = await this.vacanciesRepository.findOne({ where: { id } })
 
     if (!vacancy) {
-      throw new NotFoundException("Vacante no encontrada")
+      throw new NotFoundException("Vacancy not found")
     }
 
-    // Si se actualizan las tecnologías, buscar o crear
+    // If I'm updating technologies, I use the helper service again.
     if (updateVacancyDto.technologies) {
       const technologies = await this.technologiesService.findOrCreate(updateVacancyDto.technologies)
       vacancy.technologies = technologies
     }
 
-    // Actualizar los demás campos
+    // I merge the new values into the existing entity.
     Object.assign(vacancy, updateVacancyDto)
 
     const updatedVacancy = await this.vacanciesRepository.save(vacancy)
 
     return {
-      message: "Vacante actualizada exitosamente",
+      message: "Vacancy updated successfully",
       data: updatedVacancy,
     }
   }
@@ -107,15 +114,16 @@ export class VacanciesService {
     const vacancy = await this.vacanciesRepository.findOne({ where: { id } })
 
     if (!vacancy) {
-      throw new NotFoundException("Vacante no encontrada")
+      throw new NotFoundException("Vacancy not found")
     }
 
+    // I simply flip the boolean flag.
     vacancy.isActive = !vacancy.isActive
 
     await this.vacanciesRepository.save(vacancy)
 
     return {
-      message: `Vacante ${vacancy.isActive ? "activada" : "desactivada"} exitosamente`,
+      message: `Vacancy ${vacancy.isActive ? "activated" : "deactivated"} successfully`,
       data: vacancy,
     }
   }

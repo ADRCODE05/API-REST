@@ -2,8 +2,8 @@ import { Injectable, BadRequestException, NotFoundException, ConflictException }
 import { InjectRepository } from "@nestjs/typeorm"
 import type { Repository } from "typeorm"
 import { Application } from "./entities/application.entity"
-import type { VacanciesService } from "../vacancies/vacancies.service"
-import type { CreateApplicationDto } from "./dto/create-application.dto"
+import { VacanciesService } from "../vacancies/vacancies.service"
+import { CreateApplicationDto } from "./dto/create-application.dto"
 
 @Injectable()
 export class ApplicationsService {
@@ -11,40 +11,43 @@ export class ApplicationsService {
     @InjectRepository(Application)
     private applicationsRepository: Repository<Application>,
     private vacanciesService: VacanciesService,
-  ) {}
+  ) { }
 
   async create(userId: string, createApplicationDto: CreateApplicationDto) {
     const { vacancyId } = createApplicationDto
 
-    // Validación 1: Verificar que la vacante existe
+    // Validation 1: I verify that the vacancy exists.
     const vacancy = await this.vacanciesService.findOne(vacancyId)
 
     if (!vacancy.data) {
-      throw new NotFoundException("La vacante no existe")
+      throw new NotFoundException("The vacancy does not exist")
     }
 
-    // Validación 2: Verificar que la vacante esté activa
+    // Validation 2: I check that the vacancy is active.
+    // We shouldn't allow applications to closed vacancies.
     if (!vacancy.data.isActive) {
-      throw new BadRequestException("No puedes postularte a una vacante inactiva")
+      throw new BadRequestException("You cannot apply to an inactive vacancy")
     }
 
-    // Validación 3: Un coder no puede postularse dos veces a la misma vacante
+    // Validation 3: I ensure a coder cannot apply twice to the same vacancy.
+    // This maintains database integrity.
     const existingApplication = await this.applicationsRepository.findOne({
       where: { userId, vacancyId },
     })
 
     if (existingApplication) {
-      throw new ConflictException("Ya te has postulado a esta vacante anteriormente")
+      throw new ConflictException("You have already applied to this vacancy")
     }
 
-    // Validación 4: No se permiten postulaciones cuando el cupo está completo
+    // Validation 4: I check if there are still available slots.
     const hasSlots = await this.vacanciesService.hasAvailableSlots(vacancyId)
 
     if (!hasSlots) {
-      throw new BadRequestException("Esta vacante ya no tiene cupos disponibles")
+      throw new BadRequestException("This vacancy is already full")
     }
 
-    // Validación 5: Un coder no puede postularse a más de 3 vacantes activas
+    // Validation 5: I limit users to a maximum of 3 active applications.
+    // This encourages users to be selective.
     const activeApplicationsCount = await this.applicationsRepository.count({
       where: {
         userId,
@@ -55,11 +58,11 @@ export class ApplicationsService {
 
     if (activeApplicationsCount >= 3) {
       throw new BadRequestException(
-        "No puedes postularte a más de 3 vacantes activas. Cancela alguna postulación anterior o espera a que se cierre una vacante.",
+        "You cannot apply to more than 3 active vacancies. Please cancel a previous application or wait for one to close.",
       )
     }
 
-    // Crear la postulación
+    // I create the application record.
     const application = this.applicationsRepository.create({
       userId,
       vacancyId,
@@ -67,19 +70,20 @@ export class ApplicationsService {
 
     const savedApplication = await this.applicationsRepository.save(application)
 
-    // Obtener la aplicación completa con relaciones
+    // I fetch the full object to return it with its relations (user and vacancy info).
     const fullApplication = await this.applicationsRepository.findOne({
       where: { id: savedApplication.id },
       relations: ["user", "vacancy"],
     })
 
     return {
-      message: "Postulación realizada exitosamente",
+      message: "Application submitted successfully",
       data: fullApplication,
     }
   }
 
   async findAll() {
+    // I fetch all applications for the admin view.
     const applications = await this.applicationsRepository.find({
       relations: ["user", "vacancy", "vacancy.technologies"],
       order: { appliedAt: "DESC" },
@@ -91,6 +95,7 @@ export class ApplicationsService {
   }
 
   async findByUser(userId: string) {
+    // I filter applications by user ID.
     const applications = await this.applicationsRepository.find({
       where: { userId },
       relations: ["vacancy", "vacancy.technologies"],
@@ -103,6 +108,7 @@ export class ApplicationsService {
   }
 
   async findByVacancy(vacancyId: string) {
+    // I filter applications by vacancy ID.
     const applications = await this.applicationsRepository.find({
       where: { vacancyId },
       relations: ["user"],
@@ -120,18 +126,18 @@ export class ApplicationsService {
     })
 
     if (!application) {
-      throw new NotFoundException("Postulación no encontrada")
+      throw new NotFoundException("Application not found")
     }
 
-    // Solo el usuario que creó la postulación puede eliminarla
+    // Security check: I ensure only the owner can delete their application.
     if (application.userId !== userId) {
-      throw new BadRequestException("No puedes eliminar una postulación que no te pertenece")
+      throw new BadRequestException("You cannot delete an application that doesn't belong to you")
     }
 
     await this.applicationsRepository.remove(application)
 
     return {
-      message: "Postulación eliminada exitosamente",
+      message: "Application deleted successfully",
     }
   }
 }

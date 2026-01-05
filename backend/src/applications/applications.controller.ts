@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Delete, Param, UseGuards } from "@nestjs/common"
+import { Controller, Get, Post, Delete, Param, UseGuards, Body } from "@nestjs/common"
 import { ApiTags, ApiOperation, ApiResponse, ApiSecurity, ApiBearerAuth } from "@nestjs/swagger"
-import type { ApplicationsService } from "./applications.service"
-import type { CreateApplicationDto } from "./dto/create-application.dto"
+import { ApplicationsService } from "./applications.service"
+import { CreateApplicationDto } from "./dto/create-application.dto"
 import { Roles } from "../common/decorators/roles.decorator"
 import { Role } from "../common/enums/role.enum"
 import { RolesGuard } from "../common/guards/roles.guard"
@@ -14,7 +14,7 @@ import { CurrentUser } from "../common/decorators/current-user.decorator"
 @UseGuards(ApiKeyGuard, RolesGuard)
 @Controller("applications")
 export class ApplicationsController {
-  constructor(private readonly applicationsService: ApplicationsService) {}
+  constructor(private readonly applicationsService: ApplicationsService) { }
 
   @Post()
   @Roles(Role.CODER)
@@ -23,7 +23,7 @@ export class ApplicationsController {
   @ApiResponse({ status: 400, description: "Regla de negocio violada" })
   @ApiResponse({ status: 404, description: "Vacante no encontrada" })
   @ApiResponse({ status: 409, description: "Ya te has postulado a esta vacante" })
-  create(createApplicationDto: CreateApplicationDto, @CurrentUser() user: any) {
+  create(@Body() createApplicationDto: CreateApplicationDto, @CurrentUser() user: any) {
     return this.applicationsService.create(user.id, createApplicationDto)
   }
 
