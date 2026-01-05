@@ -1,5 +1,5 @@
 const API_URL = "http://localhost:3001/api"
-const API_KEY = "riwi_api_key_2024_change_in_production"
+const API_KEY = "my_development_api_key"
 
 let currentUser = null
 let authToken = null
@@ -15,7 +15,7 @@ function setupEventListeners() {
   // I attach event listeners to my forms.
   document.getElementById("login-form").addEventListener("submit", handleLogin)
   document.getElementById("register-form").addEventListener("submit", handleRegister)
-  document.getElementById("create-vacancy-form").addEventListener("submit", handleCreateVacancy)
+  document.getElementById("create-vacancy-form").addEventListener("submit", handleVacancySubmit)
 }
 
 function checkAuth() {
@@ -172,11 +172,18 @@ function loadGestorData() {
       return Promise.all([vacanciesRes.json(), applicationsRes.json()])
     })
     .then(([vacanciesData, applicationsData]) => {
-      const vacancies = vacanciesData.data
-      const applications = applicationsData.data
+      const vacancies = vacanciesData?.data || []
+      const applications = applicationsData?.data || []
 
-      document.getElementById("total-vacancies").textContent = vacancies.filter((v) => v.isActive).length
-      document.getElementById("total-applications").textContent = applications.length
+      const totalVacanciesElement = document.getElementById("total-vacancies")
+      if (totalVacanciesElement) {
+        totalVacanciesElement.textContent = Array.isArray(vacancies) ? vacancies.filter((v) => v.isActive).length : 0
+      }
+
+      const totalApplicationsElement = document.getElementById("total-applications")
+      if (totalApplicationsElement) {
+        totalApplicationsElement.textContent = Array.isArray(applications) ? applications.length : 0
+      }
 
       renderVacanciesGestor(vacancies)
     })
@@ -188,7 +195,7 @@ function loadGestorData() {
 function renderVacanciesGestor(vacancies) {
   const container = document.getElementById("vacancies-list-gestor")
 
-  if (vacancies.length === 0) {
+  if (!Array.isArray(vacancies) || vacancies.length === 0) {
     container.innerHTML = '<div class="empty-state"><h3>No vacancies created yet</h3></div>'
     return
   }
@@ -220,21 +227,33 @@ function renderVacanciesGestor(vacancies) {
         <p><strong>Salary:</strong> ${vacancy.salaryRange}</p>
       </div>
       
-      <div class="vacancy-footer">
-        <span class="slots-info">
-          ${vacancy.currentApplicants}/${vacancy.maxApplicants} applications
-        </span>
-        <button class="btn-secondary" onclick="toggleVacancy('${vacancy.id}', ${vacancy.isActive})">
-          ${vacancy.isActive ? "Deactivate" : "Activate"}
-        </button>
+        <div class="vacancy-footer">
+          <span class="slots-info">
+            ${vacancy.currentApplicants}/${vacancy.maxApplicants} applications
+          </span>
+          <div class="footer-actions" style="display: flex; gap: 8px;">
+            <button class="btn-info" onclick="viewApplicants('${vacancy.id}', '${vacancy.title}')" style="background: var(--primary-color); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+              View Applicants
+            </button>
+            <button class="btn-warning" onclick="editVacancy('${vacancy.id}')" style="background: #f59e0b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+              Edit
+            </button>
+            <button class="btn-secondary" onclick="toggleVacancy('${vacancy.id}', ${vacancy.isActive})">
+              ${vacancy.isActive ? "Deactivate" : "Activate"}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
-  `,
+    `,
     )
     .join("")
 }
 
 function showCreateVacancyModal() {
+  document.getElementById("vacancy-modal-title").textContent = "Create New Vacancy"
+  const form = document.getElementById("create-vacancy-form")
+  form.dataset.mode = "create"
+  delete form.dataset.id
   document.getElementById("create-vacancy-modal").classList.add("show")
 }
 
@@ -243,8 +262,12 @@ function closeCreateVacancyModal() {
   document.getElementById("create-vacancy-form").reset()
 }
 
-function handleCreateVacancy(e) {
+function handleVacancySubmit(e) {
   e.preventDefault()
+
+  const form = e.target
+  const mode = form.dataset.mode
+  const id = form.dataset.id
 
   // I gather the form data into a structured object.
   const formData = {
@@ -262,8 +285,11 @@ function handleCreateVacancy(e) {
     maxApplicants: Number.parseInt(document.getElementById("vacancy-max").value),
   }
 
-  const createPromise = fetch(`${API_URL}/vacancies`, {
-    method: "POST",
+  const url = mode === "edit" ? `${API_URL}/vacancies/${id}` : `${API_URL}/vacancies`
+  const method = mode === "edit" ? "PATCH" : "POST"
+
+  fetch(url, {
+    method: method,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${authToken}`,
@@ -271,8 +297,6 @@ function handleCreateVacancy(e) {
     },
     body: JSON.stringify(formData),
   })
-
-  createPromise
     .then((response) => {
       if (!response.ok) {
         return response.json().then((err) => Promise.reject(err))
@@ -284,7 +308,39 @@ function handleCreateVacancy(e) {
       loadGestorData()
     })
     .catch((error) => {
-      showError("create-vacancy-error", error.message || "Error creating vacancy")
+      showError("create-vacancy-error", error.message || `Error ${mode === "edit" ? "updating" : "creating"} vacancy`)
+    })
+}
+
+function editVacancy(vacancyId) {
+  fetch(`${API_URL}/vacancies/${vacancyId}`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      "x-api-key": API_KEY,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      const vacancy = data.data
+      document.getElementById("vacancy-title").value = vacancy.title
+      document.getElementById("vacancy-description").value = vacancy.description
+      document.getElementById("vacancy-technologies").value = vacancy.technologies.map((t) => t.name).join(", ")
+      document.getElementById("vacancy-seniority").value = vacancy.seniority
+      document.getElementById("vacancy-location").value = vacancy.location
+      document.getElementById("vacancy-modality").value = vacancy.modality
+      document.getElementById("vacancy-salary").value = vacancy.salaryRange
+      document.getElementById("vacancy-company").value = vacancy.company
+      document.getElementById("vacancy-max").value = vacancy.maxApplicants
+
+      document.getElementById("vacancy-modal-title").textContent = "Edit Vacancy"
+      const form = document.getElementById("create-vacancy-form")
+      form.dataset.mode = "edit"
+      form.dataset.id = vacancyId
+
+      document.getElementById("create-vacancy-modal").classList.add("show")
+    })
+    .catch((err) => {
+      alert("Error loading vacancy data: " + err.message)
     })
 }
 
@@ -306,6 +362,118 @@ function toggleVacancy(vacancyId, isActive) {
     .catch((error) => {
       console.error("Error toggling vacancy:", error)
     })
+}
+
+function viewApplicants(vacancyId, vacancyTitle) {
+  const modal = document.getElementById("view-applicants-modal")
+  const title = document.getElementById("applicants-modal-title")
+  const container = document.getElementById("applicants-list-container")
+
+  title.textContent = `Applicants for: ${vacancyTitle}`
+  container.innerHTML = '<div class="loading">Loading applicants...</div>'
+  modal.classList.add("show")
+
+  fetch(`${API_URL}/applications/vacancy/${vacancyId}`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      "x-api-key": API_KEY,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      const applicants = data.data || []
+      if (applicants.length === 0) {
+        container.innerHTML = '<div class="empty-state">No applicants yet</div>'
+        return
+      }
+
+      container.innerHTML = applicants
+        .map(
+          (app) => `
+        <div class="applicant-item">
+          <div class="applicant-info">
+            <h4>${app.user.name}</h4>
+            <p>${app.user.email}</p>
+          </div>
+          <div class="applicant-date">
+            <span>Applied: ${new Date(app.appliedAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+      `,
+        )
+        .join("")
+    })
+    .catch((err) => {
+      container.innerHTML = `<div class="error-message show">Error: ${err.message}</div>`
+    })
+}
+
+function closeViewApplicantsModal() {
+  document.getElementById("view-applicants-modal").classList.remove("show")
+}
+
+function showAllApplications() {
+  document.getElementById("vacancies-list-gestor").style.display = "none"
+  document.getElementById("btn-view-all-apps").style.display = "none"
+  document.getElementById("all-applications-section").style.display = "block"
+  document.querySelector(".stats").style.display = "none"
+  loadAllApplications()
+}
+
+function hideAllApplications() {
+  document.getElementById("vacancies-list-gestor").style.display = "block"
+  document.getElementById("btn-view-all-apps").style.display = "block"
+  document.getElementById("all-applications-section").style.display = "none"
+  document.querySelector(".stats").style.display = "grid"
+}
+
+function loadAllApplications() {
+  const container = document.getElementById("all-applications-list")
+  container.innerHTML = '<div class="loading">Loading all applications...</div>'
+
+  fetch(`${API_URL}/applications`, {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      "x-api-key": API_KEY,
+    },
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      const applications = data.data || []
+      renderAllApplications(applications)
+    })
+    .catch((err) => {
+      container.innerHTML = `<div class="error-message show">Error: ${err.message}</div>`
+    })
+}
+
+function renderAllApplications(applications) {
+  const container = document.getElementById("all-applications-list")
+
+  if (applications.length === 0) {
+    container.innerHTML = '<div class="empty-state">No applications found in the platform</div>'
+    return
+  }
+
+  container.innerHTML = applications
+    .map(
+      (app) => `
+    <div class="vacancy-card">
+      <div class="vacancy-header">
+        <div>
+          <h3>${app.user.name}</h3>
+          <p>${app.user.email}</p>
+        </div>
+        <div class="badge badge-success">Application</div>
+      </div>
+      <div class="vacancy-info">
+        <p><strong>Vacancy:</strong> ${app.vacancy.title} (${app.vacancy.company})</p>
+        <p><strong>Date:</strong> ${new Date(app.appliedAt).toLocaleString()}</p>
+      </div>
+    </div>
+  `,
+    )
+    .join("")
 }
 
 // Coder Panel
@@ -336,8 +504,10 @@ function loadCoderData() {
       return Promise.all([vacanciesRes.json(), applicationsRes.json()])
     })
     .then(([vacanciesData, applicationsData]) => {
-      renderVacancies(vacanciesData.data, applicationsData.data)
-      renderMyApplications(applicationsData.data)
+      const vacancies = vacanciesData?.data || []
+      const applications = applicationsData?.data || []
+      renderVacancies(vacancies, applications)
+      renderMyApplications(applications)
     })
     .catch((error) => {
       console.error("Error loading coder data:", error)
@@ -346,9 +516,9 @@ function loadCoderData() {
 
 function renderVacancies(vacancies, myApplications) {
   const container = document.getElementById("vacancies-list")
-  const appliedVacancyIds = myApplications.map((app) => app.vacancyId)
+  const appliedVacancyIds = Array.isArray(myApplications) ? myApplications.map((app) => app.vacancyId) : []
 
-  if (vacancies.length === 0) {
+  if (!Array.isArray(vacancies) || vacancies.length === 0) {
     container.innerHTML = '<div class="empty-state"><h3>No vacancies available</h3></div>'
     return
   }
@@ -465,16 +635,19 @@ function cancelApplication(applicationId) {
   if (!confirm("Are you sure you want to cancel this application?")) return
 
   // I use a DELETE request to remove my application.
-  const cancelPromise = fetch(`${API_URL}/applications/${applicationId}`, {
+  fetch(`${API_URL}/applications/${applicationId}`, {
     method: "DELETE",
     headers: {
       Authorization: `Bearer ${authToken}`,
       "x-api-key": API_KEY,
     },
   })
-
-  cancelPromise
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((err) => Promise.reject(err))
+      }
+      return response.json()
+    })
     .then(() => {
       alert("Application cancelled")
       loadCoderData()

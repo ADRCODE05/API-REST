@@ -59,9 +59,7 @@ export class VacanciesService {
       hasAvailableSlots: vacancy.maxApplicants > (vacancy.applications?.length || 0),
     }))
 
-    return {
-      data: vacanciesWithAvailability,
-    }
+    return vacanciesWithAvailability
   }
 
   async findOne(id: string) {
@@ -77,12 +75,10 @@ export class VacanciesService {
 
     // I return the calculated availability metrics here as well.
     return {
-      data: {
-        ...vacancy,
-        currentApplicants: vacancy.applications?.length || 0,
-        availableSlots: vacancy.maxApplicants - (vacancy.applications?.length || 0),
-        hasAvailableSlots: vacancy.maxApplicants > (vacancy.applications?.length || 0),
-      },
+      ...vacancy,
+      currentApplicants: vacancy.applications?.length || 0,
+      availableSlots: vacancy.maxApplicants - (vacancy.applications?.length || 0),
+      hasAvailableSlots: vacancy.maxApplicants > (vacancy.applications?.length || 0),
     }
   }
 

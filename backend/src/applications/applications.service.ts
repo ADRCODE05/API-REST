@@ -19,13 +19,13 @@ export class ApplicationsService {
     // Validation 1: I verify that the vacancy exists.
     const vacancy = await this.vacanciesService.findOne(vacancyId)
 
-    if (!vacancy.data) {
+    if (!vacancy) {
       throw new NotFoundException("The vacancy does not exist")
     }
 
     // Validation 2: I check that the vacancy is active.
     // We shouldn't allow applications to closed vacancies.
-    if (!vacancy.data.isActive) {
+    if (!vacancy.isActive) {
       throw new BadRequestException("You cannot apply to an inactive vacancy")
     }
 
@@ -89,9 +89,7 @@ export class ApplicationsService {
       order: { appliedAt: "DESC" },
     })
 
-    return {
-      data: applications,
-    }
+    return applications
   }
 
   async findByUser(userId: string) {
@@ -102,9 +100,7 @@ export class ApplicationsService {
       order: { appliedAt: "DESC" },
     })
 
-    return {
-      data: applications,
-    }
+    return applications
   }
 
   async findByVacancy(vacancyId: string) {
@@ -115,9 +111,7 @@ export class ApplicationsService {
       order: { appliedAt: "DESC" },
     })
 
-    return {
-      data: applications,
-    }
+    return applications
   }
 
   async remove(id: string, userId: string) {

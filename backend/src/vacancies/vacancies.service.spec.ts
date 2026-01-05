@@ -105,8 +105,8 @@ describe("VacanciesService", () => {
     it("should return all active vacancies", async () => {
       const result = await service.findAll(false)
 
-      expect(result.data).toBeDefined()
-      expect(result.data.length).toBeGreaterThan(0)
+      expect(result).toBeDefined()
+      expect(result.length).toBeGreaterThan(0)
       expect(mockVacanciesRepository.find).toHaveBeenCalledWith({
         where: { isActive: true },
         relations: ["technologies", "applications"],
@@ -117,9 +117,9 @@ describe("VacanciesService", () => {
     it("should include available slots information", async () => {
       const result = await service.findAll(false)
 
-      expect(result.data[0].currentApplicants).toBeDefined()
-      expect(result.data[0].availableSlots).toBeDefined()
-      expect(result.data[0].hasAvailableSlots).toBeDefined()
+      expect(result[0].currentApplicants).toBeDefined()
+      expect(result[0].availableSlots).toBeDefined()
+      expect(result[0].hasAvailableSlots).toBeDefined()
     })
   })
 
@@ -127,8 +127,8 @@ describe("VacanciesService", () => {
     it("should return a vacancy by ID", async () => {
       const result = await service.findOne("1")
 
-      expect(result.data).toBeDefined()
-      expect(result.data.id).toBe("1")
+      expect(result).toBeDefined()
+      expect(result.id).toBe("1")
       expect(mockVacanciesRepository.findOne).toHaveBeenCalledWith({
         where: { id: "1" },
         relations: ["technologies", "applications", "applications.user"],
