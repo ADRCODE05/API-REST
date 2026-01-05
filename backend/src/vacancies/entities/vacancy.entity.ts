@@ -3,9 +3,9 @@ import type { Technology } from "../../technologies/entities/technology.entity"
 import type { Application } from "../../applications/entities/application.entity"
 
 export enum Modality {
-  REMOTO = "remoto",
-  HIBRIDO = "híbrido",
-  PRESENCIAL = "presencial",
+  REMOTE = "remote",
+  HYBRID = "hybrid",
+  ON_SITE = "on-site",
 }
 
 @Entity("vacancies")
@@ -37,9 +37,9 @@ export class Vacancy {
   location: string
 
   @Column({
-    type: "enum",
+    type: "simple-enum",
     enum: Modality,
-    default: Modality.REMOTO,
+    default: Modality.REMOTE,
   })
   modality: Modality
 
@@ -55,7 +55,7 @@ export class Vacancy {
   @Column({ type: "boolean", default: true })
   isActive: boolean
 
-  @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  @CreateDateColumn()
   createdAt: Date
 
   @OneToMany("Application", "vacancy")

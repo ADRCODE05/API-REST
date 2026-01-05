@@ -9,13 +9,15 @@ import { Application } from "../../applications/entities/application.entity"
 // Cargar variables de entorno
 config()
 
+const isSqlite = process.env.DB_TYPE === "sqlite"
+
 const AppDataSource = new DataSource({
-  type: "postgres",
+  type: isSqlite ? "sqlite" : "postgres",
   host: process.env.DB_HOST || "localhost",
   port: Number.parseInt(process.env.DB_PORT) || 5432,
   username: process.env.DB_USERNAME || "postgres",
   password: process.env.DB_PASSWORD || "postgres",
-  database: process.env.DB_NAME || "riwi_empleabilidad",
+  database: isSqlite ? (process.env.DB_DATABASE || "database.sqlite") : (process.env.DB_NAME || "riwi_empleabilidad"),
   entities: [User, Vacancy, Technology, Application],
   synchronize: true,
 })

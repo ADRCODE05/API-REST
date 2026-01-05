@@ -17,13 +17,13 @@ export class User {
   password: string
 
   @Column({
-    type: "enum",
+    type: "simple-enum",
     enum: Role,
     default: Role.CODER,
   })
   role: Role
 
-  @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  @CreateDateColumn()
   createdAt: Date
 
   @OneToMany("Application", "user")

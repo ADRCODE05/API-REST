@@ -1,38 +1,38 @@
 import { Injectable, UnauthorizedException, ConflictException } from "@nestjs/common"
-import type { JwtService } from "@nestjs/jwt"
-import type { UsersService } from "../users/users.service"
+import { JwtService } from "@nestjs/jwt"
+import { UsersService } from "../users/users.service"
 import * as bcrypt from "bcrypt"
-import type { RegisterDto } from "./dto/register.dto"
-import type { LoginDto } from "./dto/login.dto"
+import { RegisterDto } from "./dto/register.dto"
+import { LoginDto } from "./dto/login.dto"
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-  ) {}
+  ) { }
 
   async register(registerDto: RegisterDto) {
-    // Verificar si el usuario ya existe
+    // I check if the user already exists in my database.
     const existingUser = await this.usersService.findByEmail(registerDto.email)
     if (existingUser) {
-      throw new ConflictException("El email ya está registrado")
+      throw new ConflictException("Email is already registered")
     }
 
-    // Hash de la contraseña
+    // I use bcrypt to hash the password securely before saving it.
     const hashedPassword = await bcrypt.hash(registerDto.password, 10)
 
-    // Crear usuario
+    // I create the new user record.
     const user = await this.usersService.create({
       ...registerDto,
       password: hashedPassword,
     })
 
-    // Generar token
+    // I immediately generate a JWT so the user is logged in after registration.
     const token = this.generateToken(user)
 
     return {
-      message: "Usuario registrado exitosamente",
+      message: "User registered successfully",
       data: {
         user: {
           id: user.id,
@@ -46,22 +46,25 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
+    // I find the user by their email.
     const user = await this.usersService.findByEmail(loginDto.email)
 
     if (!user) {
-      throw new UnauthorizedException("Credenciales inválidas")
+      throw new UnauthorizedException("Invalid credentials")
     }
 
+    // I verify if the provided password matches the stored hash.
     const isPasswordValid = await bcrypt.compare(loginDto.password, user.password)
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException("Credenciales inválidas")
+      throw new UnauthorizedException("Invalid credentials")
     }
 
+    // I sign the JWT with the user's basic info.
     const token = this.generateToken(user)
 
     return {
-      message: "Login exitoso",
+      message: "Logged in successfully",
       data: {
         user: {
           id: user.id,
@@ -75,6 +78,7 @@ export class AuthService {
   }
 
   private generateToken(user: any): string {
+    // I define the payload with the essential data.
     const payload = { sub: user.id, email: user.email, role: user.role }
     return this.jwtService.sign(payload)
   }

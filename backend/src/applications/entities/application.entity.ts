@@ -21,6 +21,6 @@ export class Application {
   @JoinColumn({ name: "vacancyId" })
   vacancy: Vacancy
 
-  @CreateDateColumn({ type: "timestamp", default: () => "CURRENT_TIMESTAMP" })
+  @CreateDateColumn()
   appliedAt: Date
 }

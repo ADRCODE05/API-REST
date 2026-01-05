@@ -1,8 +1,8 @@
 import { Controller, Post, Body, UseGuards } from "@nestjs/common"
 import { ApiTags, ApiOperation, ApiResponse, ApiSecurity } from "@nestjs/swagger"
-import type { AuthService } from "./auth.service"
-import type { RegisterDto } from "./dto/register.dto"
-import type { LoginDto } from "./dto/login.dto"
+import { AuthService } from "./auth.service"
+import { RegisterDto } from "./dto/register.dto"
+import { LoginDto } from "./dto/login.dto"
 import { ApiKeyGuard } from "../common/guards/api-key.guard"
 import { Public } from "../common/decorators/public.decorator"
 
@@ -11,7 +11,7 @@ import { Public } from "../common/decorators/public.decorator"
 @UseGuards(ApiKeyGuard)
 @Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Public()
   @Post("register")
