@@ -3,9 +3,9 @@ import type { Technology } from "../../technologies/entities/technology.entity"
 import type { Application } from "../../applications/entities/application.entity"
 
 export enum Modality {
-  REMOTE = "remote",
-  HYBRID = "hybrid",
-  ON_SITE = "on-site",
+  REMOTE = "remoto",
+  HYBRID = "híbrido",
+  ON_SITE = "presencial",
 }
 
 @Entity("vacancies")
